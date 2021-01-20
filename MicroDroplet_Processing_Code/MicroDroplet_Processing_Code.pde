@@ -15,10 +15,11 @@ final int SERIAL_SPEED = 115200;
 Serial serial;
 Button[][] buttons;
 int w=0, h=0;
+String serialString;
 
 void setup() {
   size(512, 512);
-  
+  surface.setTitle("µDroplet GUI");
   // Serial Port
   try {
     if (Serial.list().length == 0) {
@@ -70,18 +71,21 @@ void draw() {
     windowResized();
   }
   
-  //Read Serial Port (if we can)
-  String serialString = serial.readStringUntil('\n');
-  if (serialString != null) {
-    print("->"+serialString);
-    String[] coordinates = split(serialString.replace("\n", ""), ',');
-    if (coordinates.length == 3) {
-      int x = int(coordinates[0]);
-      int y = int(coordinates[1]);
-      int state = int(coordinates[2]);
-      if( x>=0 && x<X_ROWS && y>=0 && y<=Y_COLS)
-        buttons[x][y].setState(state!=0);
+  // Read Serial Port (if we can)
+  while (serial.available() > 0) {
+    serialString = serial.readStringUntil('\n');
+    if (serialString != null) {
+      print("->"+serialString);
+      String[] coordinates = split(serialString.replace("\n", ""), ',');
+      if (coordinates.length == 3) {
+        int x = int(coordinates[0]);
+        int y = int(coordinates[1]);
+        int state = int(coordinates[2]);
+        if( x>=0 && x<X_ROWS && y>=0 && y<=Y_COLS)
+          buttons[x][y].setState(state!=0);
+      }
     }
+    else continue;
   }
   
   // Draw

@@ -58,7 +58,6 @@ void setElectrodes() {
 }
 
 void setElectrode(int x,int y,bool state) {
-  if(x<0 || x>=8 || y<0 || y>=8) return;
   if(state != electrodes[x][y]) {
     electrodes[x][y]=state;
     sendElectrode(x,y);
@@ -119,7 +118,9 @@ void setup() {
 #endif
 
 void loop() {
-  serialReadCommand();
+  if(serialReadCommand()){
+    writeHV507();
+  }
 
   // Test program
   #ifdef TEST_PROG
@@ -153,6 +154,7 @@ void loop() {
 }
 
 uint8_t serialReadCommand(){
+  uint8_t number_of_commands = 0;
   while (Serial.available() > 0) {
     char recieved = Serial.read();
 
@@ -164,33 +166,41 @@ uint8_t serialReadCommand(){
     }
 
     if (recieved == '\n' || recieved == '\r') {
-    // Close string
+      // Close string
       serialBuffer[currentIndex-1] = '\0';
-    // Clear buffer for next serial transaction
+      
+      // Clear buffer for next serial transaction
       currentIndex = 0; 
 
-    // Split the string
+      // Split the string
       char* commaIndex = strchr(serialBuffer, ',');
       if (commaIndex==NULL) {
         // Invalid command: command is malformed
-        return 0;
+        continue;
       }
       commaIndex[0] = '\0';
       char* secondCommaIndex = strchr(commaIndex+1, ',');
       if (secondCommaIndex==NULL) {
         // Invalid command: command is malformed
-        return 0;
+        continue;
       }
       secondCommaIndex[0] = '\0';
 
-      setElectrode(atoi(serialBuffer),atoi(commaIndex+1),strcmp(secondCommaIndex+1,"0")!=0);
-      return 1;
+      int x = atoi(serialBuffer);
+      int y = atoi(commaIndex+1);
+      if(x<0 || x>=ELECTRODE_ARRAY_WIDTH || y<0 || y>=ELECTRODE_ARRAY_HEIGHT){
+        // Invalid command: out of bound
+        continue;
+      }
+      
+      setElectrode(x,y,strcmp(secondCommaIndex+1,"0")!=0);
+      number_of_commands += 1;
     }
   }
-  return 0;
+  return number_of_commands;
 }
 
-void btnMatrixTest(){
+/*void btnMatrixTest(){
   for (int y = 0; y <ELECTRODE_ARRAY_WIDTH ; y++) 
     for (int x = 0; x <ELECTRODE_ARRAY_HEIGHT ; x++){
       clearElectrodes();
@@ -202,4 +212,4 @@ void btnMatrixTest(){
       delay(500);
       while(digitalRead(PIN_SWA)){}
     }
-}
+}*/

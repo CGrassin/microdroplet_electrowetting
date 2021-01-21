@@ -4,6 +4,11 @@
 // Load sketch into Processing, available from:
 // https://processing.org/
 
+// Controls:
+// * Arrow keys: shift droplets
+// * Delete/Backspace: disable all pads
+// * A: enable all pads
+
 import processing.serial.*;
 import javax.swing.JOptionPane;
 
@@ -163,36 +168,45 @@ void mousePressed() {
   }
 }
 
-// Move cells with arrow key
-// FIXME : does not work with serial connection
 void keyPressed() {
-    /*if (keyCode == UP || keyCode == LEFT) {
-      for (int x = 0; x < X_ROWS; x++) {
-        for (int y = 0; y < Y_COLS; y++) {
-          if (buttons[x][y].isActive()) {
-            buttons[x][y].toggle(x,y); 
-            if ((keyCode == LEFT && x>0) || (keyCode == UP && y>0))
-              buttons[x - (keyCode == LEFT?1:0)][y - (keyCode == UP?1:0)].toggle(x,y);
-          }
-        }
+  // Move 
+  if (keyCode == UP || keyCode == LEFT || keyCode == DOWN || keyCode == RIGHT) {
+    boolean stateTable[][] = new boolean[X_ROWS][Y_COLS];
+    
+    // Shift array
+    for (int x = 0; x < X_ROWS; x++) {
+      for (int y = 0; y < Y_COLS; y++) {
+        if(keyCode == UP && y>0)
+          stateTable[x][y-1] = buttons[x][y].isActive();
+        else if (keyCode == DOWN && y<Y_COLS-1)
+          stateTable[x][y+1] = buttons[x][y].isActive();
+        else if (keyCode == LEFT && x>0)
+          stateTable[x-1][y] = buttons[x][y].isActive();
+        else if (keyCode == RIGHT && x<X_ROWS-1)
+          stateTable[x+1][y] = buttons[x][y].isActive();
       }
-    } else if (keyCode == DOWN || keyCode == RIGHT) {
-      for (int x = X_ROWS - 1; x >= 0; x--) {
-        for (int y = Y_COLS - 1; y >= 0; y--) {
-          if (buttons[x][y].isActive()) {
-            buttons[x][y].toggle(x,y); 
-            if ((keyCode == RIGHT && x<X_ROWS - 1) || (keyCode == DOWN && y<Y_COLS - 1))
-              buttons[x + (keyCode == RIGHT?1:0)][y + (keyCode == DOWN?1:0)].toggle(x,y);
-          }
-        }
-      }
-    }*/
-    if(key == BACKSPACE || key == DELETE){
-      for (int x = 0; x < X_ROWS; x++)
-        for (int y = 0; y < Y_COLS; y++)
-          if (buttons[x][y].isActive())
-            buttons[x][y].toggle(x,y);
     }
+    
+    // Change states
+    for (int x = 0; x < X_ROWS; x++)
+      for (int y = 0; y < Y_COLS; y++)
+        if(buttons[x][y].isActive()!=stateTable[x][y])
+          buttons[x][y].toggle(x,y); 
+  }
+  // Select none
+  else if(key == BACKSPACE || key == DELETE){
+    for (int x = 0; x < X_ROWS; x++)
+      for (int y = 0; y < Y_COLS; y++)
+        if (buttons[x][y].isActive())
+          buttons[x][y].toggle(x,y);
+  }
+  // Select all
+  else if(key == 'a' || key == 'A') {
+    for (int x = 0; x < X_ROWS; x++)
+      for (int y = 0; y < Y_COLS; y++)
+        if (!buttons[x][y].isActive())
+          buttons[x][y].toggle(x,y);
+  }
 }
 
 // On window resize, compute UI size
